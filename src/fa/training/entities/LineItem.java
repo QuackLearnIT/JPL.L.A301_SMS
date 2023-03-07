@@ -10,13 +10,13 @@ public class LineItem {
     }
 
     public LineItem(int orderID, int productId, int quantity, double price) {
-        this.orderId = orderID;
+        this.orderId = orderId;
         this.productId = productId;
         this.quantity = quantity;
         this.price = price;
     }
 
-    public int getOrderID() {
+    public int getOrderId() {
         return orderId;
     }
 

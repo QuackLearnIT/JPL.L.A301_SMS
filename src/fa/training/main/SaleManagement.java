@@ -1,8 +1,11 @@
 package fa.training.main;
 
-import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
-import com.microsoft.sqlserver.jdbc.SQLServerException;
-import fa.training.utils.DBUtils;
+import fa.training.dao.CustomerDAOImpl;
+import fa.training.dao.LineItemDAOImpl;
+import fa.training.dao.OrderDAOImpl;
+import fa.training.entities.Customer;
+import fa.training.entities.LineItem;
+import fa.training.entities.Order;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -14,50 +17,60 @@ import static fa.training.utils.DBUtils.getConnection;
 
 public class SaleManagement {
     public static void main(String[] args) {
+        CustomerDAOImpl customerDAO = new CustomerDAOImpl();
+        OrderDAOImpl orderDAO = new OrderDAOImpl();
+        LineItemDAOImpl lineItemDAO = new LineItemDAOImpl();
 
-        try (Connection con = DBUtils.getConnection()) {
+        try (Connection con = getConnection()) {
             Statement statement = con.createStatement();
-
             ResultSet rs = statement.executeQuery ("SELECT * FROM Customer");
-            System.out.println("Connection succeeded");
-
+            System.out.println("Connection succeeded!!");
 
             Scanner sc = new Scanner(System.in);
 
             while (true) {
                 menu();
-                int choice = sc.nextInt();
                 System.out.print("Your choice: ");
+                int choice = sc.nextInt();
                 switch (choice) {
                     case 1:
-
+                        customerDAO.getAllCustomer();
                         break;
                     case 2:
-
+                        int customerId = sc.nextInt();
+                        orderDAO.getAllOrdersByCustomerId(customerId);
                         break;
                     case 3:
-
+                        int orderId = sc.nextInt();
+                        lineItemDAO.getAllItemsByOrderId(orderId);
                         break;
                     case 4:
-
+                        int orderIdTocompute = sc.nextInt();
+                        lineItemDAO.computeOrderTotal(orderIdTocompute);
                         break;
                     case 5:
-
+                        Customer addCustomerId = new Customer();
+                        customerDAO.addCustomer(addCustomerId);
                         break;
                     case 6:
-
+                        int deleteCustomerId = sc.nextInt();
+                        customerDAO.deleteCustomer(deleteCustomerId);
                         break;
                     case 7:
-
+                        Customer updateCustomer = new Customer();
+                        customerDAO.updateCustomer(updateCustomer);
                         break;
                     case 8:
-
+                        Order addOrder = new Order();
+                        orderDAO.addOrder(addOrder);
                         break;
                     case 9:
-
+                        LineItem addLineItem = new LineItem();
+                        lineItemDAO.addLineItem(addLineItem);
                         break;
                     case 10:
-
+                        int updateOrder = sc.nextInt();
+                        orderDAO.updateOrderTotal(updateOrder);
                         break;
                     case 11:
                         System.out.println("Exit!!");
@@ -67,15 +80,10 @@ public class SaleManagement {
                         break;
                 }
             }
-
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
-
-
-
 
     public static void menu() {
         System.out.println("=====Menu=====");
