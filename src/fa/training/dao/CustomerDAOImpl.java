@@ -10,6 +10,7 @@ import java.util.*;
 
 public class CustomerDAOImpl implements CustomerDAO {
     Scanner sc = new Scanner(System.in);
+
     @Override
     public List<Customer> getAllCustomer() {
         List<Customer> customers = new ArrayList<>();

@@ -145,7 +145,7 @@ public class SaleManagement {
                         System.out.println("Enter order ID you want to update total: ");
                         int updatedOrder = sc.nextInt();
 
-                        System.out.println("Update total: "+ orderDAO.updateOrderTotal(updatedOrder));
+                        System.out.println("Update total: " + orderDAO.updateOrderTotal(updatedOrder));
                         break;
                     case 11:
                         System.out.println("Exit!!");
