@@ -30,8 +30,7 @@ public class Customer {
 
     @Override
     public String toString() {
-        return "=====Customer=====" +
-                "\ncustomerId: " + customerId +
+        return "customerId: " + customerId +
                 ", customerName: " + customerName;
     }
 }

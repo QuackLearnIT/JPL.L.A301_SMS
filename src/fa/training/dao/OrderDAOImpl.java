@@ -1,150 +1,93 @@
 package fa.training.dao;
 
+import fa.training.entities.LineItem;
 import fa.training.entities.Order;
+import fa.training.utils.DBUtils;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class OrderDAOImpl implements OrderDAO {
+
     @Override
-    public List<Order> getAllOrdersByCustomerId(int customerId) {
-        Connection con = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        List<Order> orders = new ArrayList<>();
+    public List<LineItem> getAllItemsByOrderId(int orderId) {
+        List<LineItem> items = new ArrayList<>();
         try {
-            String sql = "SELECT id, order_date, customer_id, employee_id, total " +
-                    "FROM orders " +
-                    "WHERE customer_id = ?";
-            stmt = con.prepareStatement(sql);
-            stmt.setInt(1, customerId);
-
-            // Execute the statement and process the results
-            rs = stmt.executeQuery();
+            Connection conn = DBUtils.getConnection();
+            String sql = "SELECT * FROM LineItem WHERE order_id = ?";
+            PreparedStatement stm = conn.prepareStatement(sql);
+            stm.setInt(1, orderId);
+            ResultSet rs = stm.executeQuery();
             while (rs.next()) {
-                int orderId = rs.getInt("id");
-                Date orderDate = rs.getDate("order_date");
-                int customerIdResult = rs.getInt("customer_id");
-                int employeeId = rs.getInt("employee_id");
-                double total = rs.getDouble("total");
+                LineItem lineItem = new LineItem();
+                lineItem.setOrderId(rs.getInt(1));
+                lineItem.setProductId(rs.getInt(2));
+                lineItem.setQuantity(rs.getInt(3));
+                lineItem.setPrice(rs.getDouble(4));
+                items.add(lineItem);
+            }
+            return items;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return Collections.emptyList();
+    }
 
-                Order order = new Order(orderId, orderDate, customerIdResult, employeeId, total);
-                orders.add(order);
+    @Override
+    public Double computeOrderTotal(int orderId) {
+        try {
+            Connection conn = DBUtils.getConnection();
+            String sql = "SELECT SUM(price * quantity) AS OrderTotal FROM LineItem WHERE order_id = ? GROUP BY order_id";
+            PreparedStatement stm = conn.prepareStatement(sql);
+            stm.setInt(1, orderId);
+            ResultSet rs = stm.executeQuery();
+            if (rs.next()) {
+                return rs.getDouble("OrderTotal");
             }
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            // Close the result set, statement, and connection
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (stmt != null) {
-                try {
-                    stmt.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (con != null) {
-                try {
-                    con.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
         }
-        return orders;
+        return null;
     }
 
     @Override
     public boolean addOrder(Order order) {
-        Connection con = null;
-        PreparedStatement stmt = null;
-        boolean success = false;
         try {
-            String sql = "INSERT INTO orders (order_date, customer_id, employee_id, total) " +
-                    "VALUES (?, ?, ?, ?)";
-            stmt = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            stmt.setDate(1, new Date(order.getOrderDate().getTime()));
-            stmt.setInt(2, order.getCustomerId());
-            stmt.setInt(3, order.getEmployeeId());
-            stmt.setDouble(4, order.getTotal());
-
-            int numRowsAffected = stmt.executeUpdate();
-            ResultSet rs = stmt.getGeneratedKeys();
-            if (rs.next()) {
-                int orderId = rs.getInt(1);
-                order.setOrderId(orderId);
+            Connection conn = DBUtils.getConnection();
+            String sql = "INSERT INTO Orders (order_id, order_date, customer_id, employee_id, total) VALUES (?,?,?,?,?)";
+            PreparedStatement stm = conn.prepareStatement(sql);
+            stm.setInt(1, order.getOrderId());
+            stm.setDate(2, Date.valueOf(String.valueOf(order.getOrderDate())));
+            stm.setInt(3, order.getEmployeeId());
+            stm.setInt(4, order.getCustomerId());
+            stm.setDouble(5, order.getTotal());
+            int result = stm.executeUpdate();
+            if (result > 0) {
+                return true;
             }
-            con.commit();
-            success = true;
         } catch (Exception e) {
             e.printStackTrace();
-            if (con != null) {
-                try {
-                    con.rollback();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
-            }
-        } finally {
-            if (stmt != null) {
-                try {
-                    stmt.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (con != null) {
-                try {
-                    con.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
         }
-        return success;
+        return false;
     }
 
     @Override
     public boolean updateOrderTotal(int orderId) {
-        Connection con = null;
-        PreparedStatement stmt = null;
-        boolean success = false;
         try {
-            String sql = "UPDATE orders SET total = ? WHERE id = ?";
-            stmt = con.prepareStatement(sql);
-            double newTotal = 0;
-            stmt.setDouble(1, newTotal);
-            stmt.setInt(2, orderId);
-
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected == 1) {
-                success = true;
+            Connection conn = DBUtils.getConnection();
+            String sql = "UPDATE Orders SET total = (SELECT SUM(price * quantity) AS OrderTotal FROM LineItem WHERE order_id = ? GROUP BY order_id) WHERE order_id = ?";
+            PreparedStatement stm = conn.prepareStatement(sql);
+            stm.setInt(1, orderId);
+            stm.setInt(2, orderId);
+            int result = stm.executeUpdate();
+            if (result > 0) {
+                return true;
             }
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            if (stmt != null) {
-                try {
-                    stmt.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (con != null) {
-                try {
-                    con.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
         }
-        return success;
+        return false;
     }
 }

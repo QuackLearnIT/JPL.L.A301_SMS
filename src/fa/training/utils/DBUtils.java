@@ -15,6 +15,8 @@ public class DBUtils {
             String password = "1";
             Connection conn = DriverManager.getConnection(url, username, password);
 
+//            System.out.println("Connect successful!!");
+
             return conn;
         } catch (Exception e) {
             e.printStackTrace();

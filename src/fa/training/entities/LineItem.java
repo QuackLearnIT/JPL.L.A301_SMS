@@ -9,7 +9,7 @@ public class LineItem {
     public LineItem() {
     }
 
-    public LineItem(int orderID, int productId, int quantity, double price) {
+    public LineItem(int orderId, int productId, int quantity, double price) {
         this.orderId = orderId;
         this.productId = productId;
         this.quantity = quantity;
@@ -20,8 +20,8 @@ public class LineItem {
         return orderId;
     }
 
-    public void setOrderID(int orderID) {
-        this.orderId = orderID;
+    public void setOrderId(int orderId) {
+        this.orderId = orderId;
     }
 
     public int getProductId() {

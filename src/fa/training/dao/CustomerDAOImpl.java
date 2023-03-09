@@ -2,166 +2,111 @@ package fa.training.dao;
 
 import fa.training.entities.Customer;
 import fa.training.entities.Order;
+import fa.training.utils.DBUtils;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.Date;
+import java.util.*;
 
 public class CustomerDAOImpl implements CustomerDAO {
+    Scanner sc = new Scanner(System.in);
     @Override
     public List<Customer> getAllCustomer() {
-        Connection con = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        List<Customer> customers = new ArrayList<Customer>();
+        List<Customer> customers = new ArrayList<>();
         try {
-            String sql = "SELECT customer_id, customer_name FROM Customer";
-            stmt = con.prepareStatement(sql);
-            rs = stmt.executeQuery();
+            Connection conn = DBUtils.getConnection();
+            Statement stmt = conn.createStatement();
+            String sql = "SELECT * FROM Customer";
+            ResultSet rs = stmt.executeQuery(sql);
             while (rs.next()) {
-                int customerId = rs.getInt("customer_id");
-                String customerName = rs.getString("customer_name");
-                Customer customer = new Customer(customerId, customerName);
+                Customer customer = new Customer();
+                int customerId = rs.getInt(1);
+                String customerName = rs.getString(2);
+                customer.setCustomerId(customerId);
+                customer.setCustomerName(customerName);
                 customers.add(customer);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (stmt != null) {
-                try {
-                    stmt.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (con != null) {
-                try {
-                    con.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
         }
         return customers;
     }
 
     @Override
-    public boolean addCustomer(Customer customer) {
-        Connection con = null;
-        CallableStatement stmt = null;
-        boolean success = false;
+    public List<Order> getAllOrdersByCustomerId(int customerId) {
+
         try {
-            String sql = "{call add_customer(?, ?)}";
-            stmt = con.prepareCall(sql);
-            stmt.setString(1, customer.getCustomerName());
-            stmt.registerOutParameter(2, Types.INTEGER);
-            stmt.execute();
-            int customerId = stmt.getInt(2);
-            if (customerId > 0) {
-                customer.setCustomerId(customerId);
-                success = true;
+            Connection conn = DBUtils.getConnection();
+            String sql = "SELECT * FROM Orders WHERE customer_id = ?";
+            PreparedStatement stm = conn.prepareStatement(sql);
+            stm.setInt(1, customerId);
+
+            ResultSet rs = stm.executeQuery();
+            List<Order> orders = new ArrayList<>();
+            while (rs.next()) {
+                int orderId = rs.getInt("order_id");
+                Date orderDate = rs.getDate("order_date");
+                int employeeId = rs.getInt("employee_id");
+                int total = rs.getInt("total");
+                orders.add(new Order(orderId, orderDate, customerId, employeeId, total));
             }
-        } catch (Exception e) {
+            return orders;
+        } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            if (stmt != null) {
-                try {
-                    stmt.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (con != null) {
-                try {
-                    con.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
         }
-        return success;
+        return Collections.emptyList();
+    }
+
+    @Override
+    public boolean addCustomer(Customer customer) {
+        try {
+            Connection conn = DBUtils.getConnection();
+            String sql = "INSERT INTO Customer (customer_id, customer_name) VALUES (?,?)";
+            PreparedStatement stm = conn.prepareStatement(sql);
+            stm.setInt(1, customer.getCustomerId());
+            stm.setString(2, customer.getCustomerName());
+            int result = stm.executeUpdate();
+            if (result > 0) {
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     @Override
     public boolean deleteCustomer(int customerId) {
-        Connection con = null;
-        CallableStatement stmt = null;
-        boolean success = false;
         try {
-            String sql = "{call delete_customer(?)}";
-            stmt = con.prepareCall(sql);
-            stmt.setInt(1, customerId);
-            stmt.execute();
-            int rowsAffected = stmt.getUpdateCount();
-            if (rowsAffected > 0) {
-                success = true;
+            Connection conn = DBUtils.getConnection();
+            String sql = "DELETE FROM Customer WHERE customer_id =?";
+            PreparedStatement stm = conn.prepareStatement(sql);
+            stm.setInt(1, customerId);
+            int result = stm.executeUpdate();
+            if (result > 0) {
+                return true;
             }
         } catch (Exception e) {
             e.printStackTrace();
-
-        } finally {
-            // Close the statement and connection
-            if (stmt != null) {
-                try {
-                    stmt.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (con != null) {
-                try {
-                    con.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
         }
-        return success;
+        return false;
     }
 
     @Override
     public boolean updateCustomer(Customer customer) {
-        Connection con = null;
-        CallableStatement stmt = null;
-        boolean success = false;
         try {
-            String sql = "{call update_customer(?,?)}";
-            stmt = con.prepareCall(sql);
-            stmt.setInt(1, customer.getCustomerId());
-            stmt.setString(2, customer.getCustomerName());
-            // Execute the stored procedure
-            stmt.execute();
-            // Check the result of the stored procedure call
-            int rowsAffected = stmt.getUpdateCount();
-            if (rowsAffected > 0) {
-                success = true;
+            Connection conn = DBUtils.getConnection();
+            String sql = "UPDATE Customer SET customer_name = ? WHERE customer_id = ?";
+            PreparedStatement stm = conn.prepareStatement(sql);
+            stm.setString(1, customer.getCustomerName());
+            stm.setInt(2, customer.getCustomerId());
+            int result = stm.executeUpdate();
+            if (result > 0) {
+                return true;
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            // Close the statement and connection
-            if (stmt != null) {
-                try {
-                    stmt.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (con != null) {
-                try {
-                    con.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
         }
-        return success;
+        return false;
     }
 }
